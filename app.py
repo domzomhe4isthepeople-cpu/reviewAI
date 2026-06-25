@@ -93,7 +93,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🗺️ RoamInsight AI — เครื่องมือวิเคราะห์สถานที่ท่องเที่ยวอัจฉริยะ")
+st.title("🗺️ ReviewInsight AI — เครื่องมือวิเคราะห์สถานที่ท่องเที่ยวอัจฉริยะ")
 st.caption("ดึง Insight ลึกจากก้อนรีวิวบน Google Maps แปลงข้อมูลดิบให้กลายเป็นกลยุทธ์ทางธุรกิจด้วยพลังของ Gemini LLM")
 st.write("---")
 
