@@ -94,7 +94,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🗺️ ReviewInsight AI — เครื่องมือวิเคราะห์สถานที่ท่องเที่ยวอัจฉริยะ")
-st.caption("ดึง Insight ลึกจากก้อนรีวิวบน Google Maps แปลงข้อมูลดิบให้กลายเป็นกลยุทธ์ทางธุรกิจด้วยพลังของ Gemini LLM")
+st.caption("ดึง Insight จากรีวิวบน Google Maps แปลงข้อมูลดิบให้กลายเป็นกลยุทธ์ทางธุรกิจด้วยพลังของ Gemini LLM")
 st.write("---")
 
 # ส่วนรับข้อมูลเข้า (Input Section)
