@@ -19,7 +19,7 @@ def get_reviews_from_maps(url, max_reviews=15, review_sort="newest"):
     run_input = {
         "exportPlaceActorMetadata": True,    
         "includeReviews": True,            
-        "language": "th",                  
+        "language": "en",                  
         "maxReviews": max_reviews,                  
         "reviewsSort": review_sort,       
         "scrapeReviewerId": False,
