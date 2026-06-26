@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from apify_client import ApifyClient
 from google import genai
 from google.genai.errors import ClientError
+import plotly.express as px  # <-- เพิ่ม Plotly สำหรับทำกราฟสวยๆ
 
 # --- 1. SET UP CREDENTIALS ---
 APIFY_TOKEN = os.getenv("APIFY_TOKEN")
@@ -157,29 +158,72 @@ if submit_btn:
 # แสดงผลลัพธ์ข้อมูลในระบบ
 if st.session_state.df_reviews is not None:
     place_name = st.session_state.place_name
-    df = st.session_state.df_reviews
+    df = st.session_state.df_reviews.copy() # ใช้ .copy() ป้องกัน Warning เผื่อมีการแปลง Data
     
     st.header(f"🏢 ผลลัพธ์การวิเคราะห์: {place_name}")
     
-    # --- METRIC CARDS & CHART ---
+    # --- METRIC CARDS & SUMMARY ---
     avg_stars = df['Stars'].mean()
     total_reviews = len(df)
     
-    m_col1, m_col2, m_col3 = st.columns(3)
+    m_col1, m_col2 = st.columns(2)
     m_col1.metric(label="⭐ คะแนนดาวเฉลี่ยจากกลุ่มตัวอย่าง", value=f"{avg_stars:.2f} / 5.0")
     m_col2.metric(label="💬 จำนวนรีวิวที่นำมาคำนวณ", value=f"{total_reviews} รีวิว")
     
-    star_counts = df['Stars'].value_counts().reindex([5,4,3,2,1], fill_value=0)
-    m_col3.bar_chart(star_counts)
+    st.write("---")
     
+    # --- 📊 NEW VISUALIZATION SECTION ---
+    st.subheader("📊 การวิเคราะห์ข้อมูลเชิงภาพ (Data Visualizations)")
+    
+    # Feature Engineering แบบเร็วๆ: คำนวณความยาวข้อความรีวิว
+    df['Review Length'] = df['Review Text'].apply(lambda x: len(str(x)) if pd.notnull(x) else 0)
+    
+    g_col1, g_col2 = st.columns(2)
+    
+    with g_col1:
+        # 1. กราฟวงกลมแสดงสัดส่วนดาว (Pie Chart)
+        star_counts = df['Stars'].value_counts().reset_index()
+        star_counts.columns = ['Stars', 'Count']
+        # เปลี่ยนเป็น string เพื่อให้ Plotly แสดงผลเป็นหมวดหมู่ (Discrete Color)
+        star_counts['Stars'] = star_counts['Stars'].astype(str) + " ดาว" 
+        
+        fig_pie = px.pie(
+            star_counts, 
+            values='Count', 
+            names='Stars', 
+            title='สัดส่วนคะแนนรีวิวจากลูกค้า (%)',
+            color_discrete_sequence=px.colors.sequential.YlOrRd[::-1], # ไล่สีโทนส้ม-แดงอุ่นๆ
+            hole=0.3 # ทำเป็น Donut Chart ให้ดูโมเดิร์น
+        )
+        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_pie, use_container_width=True)
+        
+    with g_col2:
+        # 2. กราฟวิเคราะห์ความยาวรีวิวตามระดับคะแนน (Box Plot / Stripplot)
+        # ช่วยให้เห็นภาพว่า คนที่ให้ดาวน้อยหรือดาวมาก ตั้งใจพิมพ์รีวิวอธิบายยาวกว่ากัน
+        df_chart = df.copy()
+        df_chart['Stars'] = df_chart['Stars'].astype(str) + " ดาว"
+        
+        fig_box = px.box(
+            df_chart, 
+            x='Stars', 
+            y='Review Length',
+            title='ความยาวของข้อความรีวิว แยกตามระดับคะแนน (จำนวนตัวอักษร)',
+            labels={'Stars': 'ระดับคะแนน', 'Review Length': 'ความยาวรีวิว (ตัวอักษร)'},
+            color='Stars',
+            category_orders={"Stars": ["5 ดาว", "4 ดาว", "3 ดาว", "2 ดาว", "1 ดาว"]},
+            points="all" # แสดงจุดข้อมูลรีวิวแต่ละอันคู่กับกล่อง Boxplot
+        )
+        st.plotly_chart(fig_box, use_container_width=True)
+        
     st.write("---")
     
     # แบ่งหน้าจอแสดงตารางและผลวิเคราะห์ AI
     col1, col2 = st.columns([4, 5])
     
     with col1:
-        st.subheader("📊 ตารางรีวิวดิบจากลูกค้า")
-        st.dataframe(df, use_container_width=True, height=500)
+        st.subheader("📋 ตารางรีวิวดิบจากลูกค้า")
+        st.dataframe(df[['Review Text', 'Stars', 'Reviewed At']], use_container_width=True, height=500)
         
     with col2:
         st.subheader("🤖 บทสรุปและคำแนะนำเชิงลึกโดย AI")
